@@ -140,15 +140,58 @@ function GameController() {
   return {
     playRound,
     getActivePlayer,
+    getBoard: board.getBoard,
   };
 }
 
+function ScreenController() {
+  const game = GameController();
+  const playerTurnDisplay = document.getElementById("turn");
+  const boardDisplay = document.querySelector(".board");
+
+  const updateScreen = () => {
+    boardDisplay.textContent = "";
+
+    const board = game.getBoard();
+    const activePlayer = game.getActivePlayer();
+
+    playerTurnDisplay.textContent = `${activePlayer.name}'s turn...`;
+
+    board.forEach((row, rowIndex) => {
+      row.forEach((cell, columnIndex) => {
+        const cellButton = document.createElement("button");
+        cellButton.classList.add("cell");
+        cellButton.dataset.row = rowIndex;
+        cellButton.dataset.column = columnIndex;
+        cellButton.textContent = cell.getValue();
+        boardDisplay.appendChild(cellButton);
+      });
+    });
+  };
+
+  function clickHandlerBoard(e) {
+    const selectedRow = e.target.dataset.row;
+    const selectedColumn = e.target.dataset.column;
+
+    if (!selectedRow && !selectedColumn) return;
+
+    game.playRound(selectedRow, selectedColumn);
+    updateScreen();
+  }
+  boardDisplay.addEventListener("click", clickHandlerBoard);
+
+  // Initial render
+  updateScreen();
+}
+
 console.log("test");
-const game = GameController();
-game.playRound(1, 1);
-game.playRound(1, 2);
-game.playRound(1, 0);
-game.playRound(2, 1);
-game.playRound(0, 0);
-game.playRound(0, 2);
-game.playRound(2, 0);
+ScreenController();
+
+// const game = GameController();
+// game.playRound(1, 1);
+// game.playRound(1, 2);
+// game.playRound(1, 0);
+// game.playRound(2, 1);
+// game.playRound(0, 0);
+// game.playRound(0, 2);
+// game.playRound(2, 0);
