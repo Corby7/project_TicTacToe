@@ -117,6 +117,12 @@ function GameController() {
     }
   };
 
+  const isBoardFull = () => {
+    return board
+      .getBoard()
+      .every((row) => row.every((cell) => cell.getValue() !== 0));
+  };
+
   const playRound = (row, column) => {
     console.log(
       `Adding ${
@@ -129,6 +135,11 @@ function GameController() {
     if (result) {
       board.printBoard();
       console.log(`Player ${result} wins!`);
+      return "win";
+    } else if (isBoardFull()) {
+      board.printBoard();
+      console.log("It's a draw!");
+      return "draw";
     } else {
       switchPlayerTurn();
       printNewRound();
@@ -145,9 +156,17 @@ function GameController() {
 }
 
 function ScreenController() {
-  const game = GameController();
+  let game = GameController();
   const playerTurnDisplay = document.getElementById("turn");
+  const playAgain = document.getElementById("play-again");
+  const playAgainBtn = document.getElementById("play-again-button");
   const boardDisplay = document.querySelector(".board");
+
+  const playerOneSVG =
+    '<svg id="cross" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>close</title><path d="M17,8.4L13.4,12L17,15.6L15.6,17L12,13.4L8.4,17L7,15.6L10.6,12L7,8.4L8.4,7L12,10.6L15.6,7L17,8.4Z" /></svg>';
+
+  const playerTwoSVG =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>circle</title><circle cx="12" cy="12" r="5.5" /></svg>';
 
   const updateScreen = () => {
     boardDisplay.textContent = "";
@@ -155,7 +174,7 @@ function ScreenController() {
     const board = game.getBoard();
     const activePlayer = game.getActivePlayer();
 
-    playerTurnDisplay.textContent = `${activePlayer.name}'s turn...`;
+    playerTurnDisplay.innerHTML = `<b>${activePlayer.name}'s</b> turn...`;
 
     board.forEach((row, rowIndex) => {
       row.forEach((cell, columnIndex) => {
@@ -163,7 +182,52 @@ function ScreenController() {
         cellButton.classList.add("cell");
         cellButton.dataset.row = rowIndex;
         cellButton.dataset.column = columnIndex;
-        cellButton.textContent = cell.getValue();
+
+        if (cell.getValue() === "1") {
+          cellButton.innerHTML = playerOneSVG;
+        }
+        if (cell.getValue() === "2") {
+          cellButton.innerHTML = playerTwoSVG;
+        }
+
+        // Disable the button if the cell has already been claimed.
+        if (cell.getValue() !== 0) {
+          cellButton.disabled = true;
+        }
+        boardDisplay.appendChild(cellButton);
+      });
+    });
+  };
+
+  const onGameFinish = (gameResult) => {
+    boardDisplay.textContent = "";
+
+    const board = game.getBoard();
+
+    if (gameResult === "win") {
+      const activePlayer = game.getActivePlayer();
+      playerTurnDisplay.innerHTML = `<u><b>${activePlayer.name}</b></u> won!`;
+    } else if (gameResult === "draw") {
+      playerTurnDisplay.innerHTML = `<u><b>It's a draw!</b></u>`;
+    }
+
+    playAgain.style.display = "flex";
+
+    board.forEach((row, rowIndex) => {
+      row.forEach((cell, columnIndex) => {
+        const cellButton = document.createElement("button");
+        cellButton.disabled = true;
+        cellButton.classList.add("cell");
+        cellButton.dataset.row = rowIndex;
+        cellButton.dataset.column = columnIndex;
+
+        if (cell.getValue() === "1") {
+          cellButton.innerHTML = playerOneSVG;
+        }
+        if (cell.getValue() === "2") {
+          cellButton.innerHTML = playerTwoSVG;
+        }
+
         boardDisplay.appendChild(cellButton);
       });
     });
@@ -173,25 +237,26 @@ function ScreenController() {
     const selectedRow = e.target.dataset.row;
     const selectedColumn = e.target.dataset.column;
 
-    if (!selectedRow && !selectedColumn) return;
+    const gameResult = game.playRound(selectedRow, selectedColumn);
+    if (gameResult) {
+      onGameFinish(gameResult);
+    } else {
+      updateScreen();
+    }
+  }
 
-    game.playRound(selectedRow, selectedColumn);
+  function resetGame() {
+    playAgain.style.display = "none";
+    game = GameController();
+
     updateScreen();
   }
+
   boardDisplay.addEventListener("click", clickHandlerBoard);
+  playAgainBtn.addEventListener("click", resetGame);
 
   // Initial render
   updateScreen();
 }
 
-console.log("test");
 ScreenController();
-
-// const game = GameController();
-// game.playRound(1, 1);
-// game.playRound(1, 2);
-// game.playRound(1, 0);
-// game.playRound(2, 1);
-// game.playRound(0, 0);
-// game.playRound(0, 2);
-// game.playRound(2, 0);
