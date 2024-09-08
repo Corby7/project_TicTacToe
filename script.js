@@ -63,6 +63,8 @@ function GameController() {
   ];
 
   let activePlayer = players[0];
+  // Track winning cells
+  let winningCells = [];
 
   const switchPlayerTurn = () => {
     activePlayer = activePlayer === players[0] ? players[1] : players[0];
@@ -77,6 +79,7 @@ function GameController() {
 
   const checkWinCondition = () => {
     const boardState = board.getBoard(); // Get the board array
+    winningCells = []; // Reset winning cells
 
     // Check rows
     for (let i = 0; i < 3; i++) {
@@ -85,6 +88,11 @@ function GameController() {
         boardState[i][0].getValue() === boardState[i][1].getValue() &&
         boardState[i][1].getValue() === boardState[i][2].getValue()
       ) {
+        winningCells = [
+          [i, 0],
+          [i, 1],
+          [i, 2],
+        ];
         return boardState[i][0].getValue(); // Return the winning player
       }
     }
@@ -96,6 +104,11 @@ function GameController() {
         boardState[0][i].getValue() === boardState[1][i].getValue() &&
         boardState[1][i].getValue() === boardState[2][i].getValue()
       ) {
+        winningCells = [
+          [0, i],
+          [1, i],
+          [2, i],
+        ];
         return boardState[0][i].getValue(); // Return the winning player
       }
     }
@@ -106,6 +119,11 @@ function GameController() {
       boardState[0][0].getValue() === boardState[1][1].getValue() &&
       boardState[1][1].getValue() === boardState[2][2].getValue()
     ) {
+      winningCells = [
+        [0, 0],
+        [1, 1],
+        [2, 2],
+      ];
       return boardState[0][0].getValue(); // Return the winning player
     }
     if (
@@ -113,6 +131,11 @@ function GameController() {
       boardState[0][2].getValue() === boardState[1][1].getValue() &&
       boardState[1][1].getValue() === boardState[2][0].getValue()
     ) {
+      winningCells = [
+        [0, 2],
+        [1, 1],
+        [2, 0],
+      ];
       return boardState[0][2].getValue(); // Return the winning player
     }
   };
@@ -135,11 +158,11 @@ function GameController() {
     if (result) {
       board.printBoard();
       console.log(`Player ${result} wins!`);
-      return "win";
+      return { status: "win", winner: result, cells: winningCells };
     } else if (isBoardFull()) {
       board.printBoard();
       console.log("It's a draw!");
-      return "draw";
+      return { status: "draw" };
     } else {
       switchPlayerTurn();
       printNewRound();
@@ -152,6 +175,7 @@ function GameController() {
     playRound,
     getActivePlayer,
     getBoard: board.getBoard,
+    getWinningCells: () => winningCells,
   };
 }
 
@@ -174,7 +198,9 @@ function ScreenController() {
     const board = game.getBoard();
     const activePlayer = game.getActivePlayer();
 
-    playerTurnDisplay.innerHTML = `<b>${activePlayer.name}'s</b> turn...`;
+    const playerClass =
+      activePlayer.shape === "1" ? "player-one" : "player-two";
+    playerTurnDisplay.innerHTML = `<b class="${playerClass}">${activePlayer.name}'s</b> turn...`;
 
     board.forEach((row, rowIndex) => {
       row.forEach((cell, columnIndex) => {
@@ -199,19 +225,24 @@ function ScreenController() {
     });
   };
 
+  const highlightWinningCells = (cells, winner) => {
+    cells.forEach(([row, col]) => {
+      const cellButton = boardDisplay.querySelector(
+        `button[data-row='${row}'][data-column='${col}']`
+      );
+      // Check if cellButton is not null
+      if (winner === "1") {
+        cellButton.classList.add("winner-cross");
+      } else if (winner === "2") {
+        cellButton.classList.add("winner-circle");
+      }
+    });
+  };
+
   const onGameFinish = (gameResult) => {
     boardDisplay.textContent = "";
 
     const board = game.getBoard();
-
-    if (gameResult === "win") {
-      const activePlayer = game.getActivePlayer();
-      playerTurnDisplay.innerHTML = `<u><b>${activePlayer.name}</b></u> won!`;
-    } else if (gameResult === "draw") {
-      playerTurnDisplay.innerHTML = `<u><b>It's a draw!</b></u>`;
-    }
-
-    playAgain.style.display = "flex";
 
     board.forEach((row, rowIndex) => {
       row.forEach((cell, columnIndex) => {
@@ -231,6 +262,17 @@ function ScreenController() {
         boardDisplay.appendChild(cellButton);
       });
     });
+
+    if (gameResult.status === "win") {
+      const activePlayer = game.getActivePlayer();
+      const playerClass =
+        activePlayer.shape === "1" ? "player-one" : "player-two";
+      playerTurnDisplay.innerHTML = `<u><b class="${playerClass}">${activePlayer.name}</b></u> won!`;
+      highlightWinningCells(gameResult.cells, gameResult.winner);
+    } else if (gameResult.status === "draw") {
+      playerTurnDisplay.innerHTML = `<u><b>It's a draw!</b></u>`;
+    }
+    playAgain.style.display = "flex";
   };
 
   function clickHandlerBoard(e) {
@@ -248,7 +290,6 @@ function ScreenController() {
   function resetGame() {
     playAgain.style.display = "none";
     game = GameController();
-
     updateScreen();
   }
 

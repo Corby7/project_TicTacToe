@@ -81,3 +81,19 @@ h1 {
 #play-again-button svg:hover {
   fill: green;
 }
+
+.winner-cross {
+  fill: blue;
+}
+
+.winner-circle {
+  fill: red;
+}
+
+.player-one {
+  color: blue;
+}
+
+.player-two {
+  color: red;
+}
